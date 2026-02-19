@@ -9,7 +9,7 @@ export interface IApi {
   ): Promise<T>;
 }
 
-export type TPayment = "online" | "cash";
+export type TPayment = "online" | "cash" | "";
 
 export interface IProduct {
   id: string;
@@ -27,11 +27,8 @@ export interface IBuyer {
   address: string;
 }
 
-export interface IOrder {
-  payment: TPayment;
-  email: string;
-  phone: string;
-  address: string;
+export interface IOrder extends IBuyer {
+  total: number;
   items: string[];
 }
 
@@ -39,3 +36,10 @@ export interface IOrderResult {
   id: string;
   total: number;
 }
+
+export interface IProductsResponse {
+  items: IProduct[];
+  total: number;
+}
+
+export type TValidationErrors = Partial<Record<keyof IBuyer, string>>;

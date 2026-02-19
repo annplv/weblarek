@@ -10,10 +10,10 @@ import { API_URL } from "./utils/constants";
 const catalogModel = new CatalogModel();
 catalogModel.setItems(apiProducts.items);
 console.log("Массив товаров из каталога:", catalogModel.getItems());
-const firstItem = catalogModel.getItem("1");
-console.log('товар с id "1":', firstItem);
-if (firstItem) {
-  catalogModel.setSelectedItem(firstItem);
+const testItem = catalogModel.getItem("854cef69-976d-4c2a-a18c-2aa45046c390");
+console.log('товар с id "854cef69-976d-4c2a-a18c-2aa45046c390":', testItem);
+if (testItem) {
+  catalogModel.setSelectedItem(testItem);
   console.log("Выбранный товар:", catalogModel.getSelectedItem());
 }
 
@@ -41,12 +41,17 @@ buyerModel.setField("payment", "online");
 buyerModel.setField("address", "ул. Пушкина, д. 10");
 buyerModel.setField("email", "no-reply@ya.ru");
 buyerModel.setField("phone", "+79998884567");
-
 console.log("Все данные покупателя:", buyerModel.getData());
-
 console.log("Ошибки валидации:", buyerModel.validate());
 
 buyerModel.clear();
+
+buyerModel.setField("payment", "online");
+buyerModel.setField("address", " "); //пробел, email пропущен
+buyerModel.setField("phone", "+79998884567");
+console.log("Все данные покупателя:", buyerModel.getData());
+console.log("Ошибки валидации:", buyerModel.validate());
+
 console.log("После очистки:", buyerModel.getData());
 
 const api = new Api(API_URL);
@@ -57,31 +62,8 @@ appApi
     console.log("Товары, полученные с сервера:", products);
     catalogModel.setItems(products);
     console.log("Каталог после сохранения:", catalogModel.getItems());
-
-    if (products.length > 0) {
-      const firstProduct = products[0];
-      console.log("Первый товар:", firstProduct);
-      catalogModel.setSelectedItem(firstProduct);
-      console.log("Выбранный товар:", catalogModel.getSelectedItem());
-    }
-
-    if (products.length >= 2) {
-      cartModel.addItem(products[0]);
-      cartModel.addItem(products[1]);
-      console.log("Товары в корзине:", cartModel.getItems());
-      console.log("Количество товаров:", cartModel.getItemCount());
-      console.log("Общая стоимость:", cartModel.getTotalPrice());
-
-      buyerModel.setField("payment", "online");
-      buyerModel.setField("address", "ул. Пушкина, д. 10");
-      buyerModel.setField("email", "no-reply@ya.ru");
-      buyerModel.setField("phone", "+79998884567");
-      const order = {
-        ...buyerModel.getData(),
-        items: cartModel.getItems().map((item) => item.id),
-      };
-      console.log("Данные для отправки заказа:", order);
-    }
+    console.log('Всего товаров:', catalogModel.getItems().length);
+    console.log('Первый товар:', catalogModel.getItems()[0]);
   })
   .catch((error) => {
     console.error("Не удалось получить товары с сервера", error);

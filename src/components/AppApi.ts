@@ -1,4 +1,4 @@
-import { IApi, IProduct, IOrder, IOrderResult } from "../types";
+import { IApi, IProduct, IOrder, IOrderResult, IProductsResponse } from "../types";
 
 export class AppApi {
   private _api: IApi;
@@ -8,22 +8,12 @@ export class AppApi {
   }
 
   async getProductList(): Promise<IProduct[]> {
-    try {
-      const response = await this._api.get<{ items: IProduct[] }>("/product");
-      return response.items;
-    } catch (error) {
-      console.error("Ошибка при получении товаров:", error);
-      return [];
-    }
+    const response = await this._api.get<IProductsResponse>("/product");
+    return response.items;
   }
 
   async postOrder(order: IOrder): Promise<IOrderResult | null> {
-    try {
-      const response = await this._api.post<IOrderResult>("/order", order);
-      return response;
-    } catch (error) {
-      console.error("Ошибка при отправке заказа:", error);
-      return null;
-    }
+    const response = await this._api.post<IOrderResult>("/order", order);
+    return response;
   }
 }
