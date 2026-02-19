@@ -3,7 +3,7 @@ import { CatalogModel } from "./components/Models/CatalogModel";
 import { CartModel } from "./components/Models/CartModel";
 import { BuyerModel } from "./components/Models/BuyerModel";
 import { apiProducts } from "./utils/data";
-import { AppApi } from "./types/index.ts";
+import { AppApi } from "./components/AppApi.ts";
 import { Api } from "./components/base/Api.ts";
 import { API_URL } from "./utils/constants";
 
