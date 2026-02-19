@@ -175,3 +175,35 @@ interface IBuyer {
 `getData(): IBuyer` - возвращает объект со всеми данными покупателя  
 `clear(): void` - очищает данные покупателя  
 `validate(): Partial<Record<keyof IBuyer, string>>` - проверка валидности всех полей, возвращает объект с ошибками
+
+### Слой коммуникации  
+#### Интерфейсы данных
+##### Данные для отправки заказа
+```
+export interface IOrder {
+  payment: TPayment;
+  email: string;
+  phone: string;
+  address: string;
+  items: string[];
+}
+```
+##### Ответ сервера при оформлении заказа
+```
+export interface IOrderResult {
+  id: string;
+  total: number;
+}
+```
+#### Класс AppApi  
+Выполнение HTTP-запросов к API сервера для получения каталога товаров и отправки данных заказа.
+
+Конструктор:  
+`constructor(api: IApi)` - принимает объект класса Api, который обеспечивает базовую функциональность для выполнения запросов  
+
+Поля класса:  
+`_api: IApi` - объект класса Api
+
+Методы класса:  
+`getProductList(): Promise<IProduct[]>` - выполняет get запрос на эндпоинт `/product/` и возвращает массив товаров  
+`postOrder(order: IOrder): Promise<IOrderResult>` - выполняет post запрос на эндпоинт `/order/` с данными заказа и возвращает результат оформления заказа
