@@ -1,10 +1,13 @@
 import { IBuyer, TPayment, TValidationErrors } from "../../types";
+import { IEvents } from "../base/Events";
 
 export class BuyerModel {
   private _payment: TPayment = "";
   private _address: string = "";
   private _email: string = "";
   private _phone: string = "";
+
+  constructor(protected events: IEvents) {}
 
   setField<K extends keyof IBuyer>(field: K, value: IBuyer[K]): void {
     switch (field) {
@@ -21,6 +24,12 @@ export class BuyerModel {
         this._phone = value;
         break;
     }
+    this.events.emit('buyer:changed', {
+      field,
+      value,
+      data: this.getData(),
+      errors: this.validate()
+    })
   }
 
   getData(): IBuyer {
@@ -37,6 +46,11 @@ export class BuyerModel {
     this._address = "";
     this._email = "";
     this._phone = "";
+
+    this.events.emit('buyer:changed', {
+      data: this.getData(),
+      errors: this.validate()
+    })
   }
 
   validate(): TValidationErrors {
