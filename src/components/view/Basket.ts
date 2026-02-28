@@ -25,6 +25,8 @@ export class Basket extends Component<IBasket> {
       this.container,
     );
 
+    this._button.disabled = true;
+
     this._button.addEventListener("click", () => {
       events.emit("basket:order");
     });
@@ -32,13 +34,7 @@ export class Basket extends Component<IBasket> {
 
   set items(items: HTMLElement[]) {
     this._list.replaceChildren(...items);
-    const hasRealItems = items.some(
-      (item) =>
-        item.classList.contains("basket__item") ||
-        item.querySelector(".card__title, .basket__item-index"),
-    );
-
-    this._button.disabled = !hasRealItems;
+    this._button.disabled = items.length === 0;
   }
 
   set total(value: number) {

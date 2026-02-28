@@ -7,7 +7,7 @@ interface IForm {
   errors: string[];
 }
 
-export abstract class Form<T> extends Component<IForm> {
+export abstract class Form extends Component<IForm> {
   protected _submit: HTMLButtonElement;
   protected _errors: HTMLElement;
 
@@ -45,9 +45,5 @@ export abstract class Form<T> extends Component<IForm> {
 
   set errors(value: string) {
     this._errors.textContent = value;
-  }
-
-  render(data?: Partial<T>): HTMLElement {
-    return super.render(data);
   }
 }

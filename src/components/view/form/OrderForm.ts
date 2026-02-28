@@ -3,12 +3,7 @@ import { IEvents } from "../../base/Events";
 import { ensureElement } from "../../../utils/utils";
 import { TPayment } from "../../../types";
 
-interface IOrderForm {
-  payment: TPayment;
-  address: string;
-}
-
-export class OrderForm extends Form<IOrderForm> {
+export class OrderForm extends Form {
   protected _paymentButtons: HTMLButtonElement[];
   protected _addressInput: HTMLInputElement;
 

@@ -18,6 +18,7 @@ import { Basket } from "./components/view/Basket";
 import { OrderForm } from "./components/view/form/OrderForm";
 import { ContactsForm } from "./components/view/form/ContactsForm";
 import { Success } from "./components/view/Success";
+import { Gallery } from "./components/view/Gallery";
 
 const events = new EventEmitter();
 
@@ -29,7 +30,7 @@ const api = new Api(API_URL);
 const appApi = new AppApi(api);
 
 const header = new Header(events, ensureElement<HTMLElement>(".header"));
-const gallery = ensureElement<HTMLElement>(".gallery");
+const gallery = new Gallery(ensureElement<HTMLElement>(".gallery"));
 const modal = new Modal(ensureElement<HTMLElement>("#modal-container"), events);
 
 const cardCatalogTemplate = ensureElement<HTMLTemplateElement>("#card-catalog");
@@ -39,6 +40,43 @@ const basketTemplate = ensureElement<HTMLTemplateElement>("#basket");
 const orderTemplate = ensureElement<HTMLTemplateElement>("#order");
 const contactsTemplate = ensureElement<HTMLTemplateElement>("#contacts");
 const successTemplate = ensureElement<HTMLTemplateElement>("#success");
+
+const previewCard = new PreviewCard(
+  cloneTemplate<HTMLElement>(cardPreviewTemplate),
+  {
+    onAddToBasket: () => {
+      const currentItem = catalogModel.getSelectedItem();
+      if (currentItem) {
+        if (cartModel.hasItem(currentItem.id)) {
+          cartModel.removeItem(currentItem);
+        } else {
+          cartModel.addItem(currentItem);
+        }
+      }
+      modal.close();
+    }
+  }
+);
+
+const basket = new Basket(
+  cloneTemplate<HTMLElement>(basketTemplate),
+  events
+);
+
+const orderForm = new OrderForm(
+  cloneTemplate<HTMLFormElement>(orderTemplate),
+  events
+);
+
+const contactsForm = new ContactsForm(
+  cloneTemplate<HTMLFormElement>(contactsTemplate),
+  events
+);
+
+const success = new Success(
+  cloneTemplate<HTMLElement>(successTemplate),
+  events
+);
 
 appApi
   .getProductList()
@@ -51,22 +89,24 @@ appApi
 
 events.on("catalog:changed", () => {
   const items = catalogModel.getItems();
-  gallery.innerHTML = "";
-
-  items.forEach((item) => {
+  
+  const cardElements = items.map((item) => {
     const card = new CatalogCard(
       cloneTemplate<HTMLElement>(cardCatalogTemplate),
-      events,
+      {
+        onClick: () => events.emit('card:select', { id: item.id })
+      }
     );
 
-    card.id = item.id;
     card.title = item.title;
     card.price = item.price;
     card.image = item.image;
     card.category = item.category;
 
-    gallery.appendChild(card.render());
+    return card.render();
   });
+
+  gallery.items = cardElements;
 });
 
 events.on("card:select", (data: { id: string }) => {
@@ -88,34 +128,16 @@ events.on("catalog:selected", () => {
         ? "Удалить из корзины"
         : "В корзину";
 
-  const card = new PreviewCard(
-    cloneTemplate<HTMLElement>(cardPreviewTemplate),
-    events,
-  );
+  previewCard.title = item.title;
+  previewCard.price = item.price;
+  previewCard.image = item.image;
+  previewCard.category = item.category;
+  previewCard.description = item.description;
+  previewCard.buttonText = buttonText;
+  previewCard.buttonDisabled = item.price === null;
 
-  card.id = item.id;
-  card.title = item.title;
-  card.price = item.price;
-  card.image = item.image;
-  card.category = item.category;
-  card.description = item.description;
-  card.buttonText = buttonText;
-  card.buttonDisabled = item.price === null;
-
-  modal.content = card.render();
+  modal.content = previewCard.render();
   modal.open();
-});
-
-events.on("card:addToBasket", (data: { id: string }) => {
-  const item = catalogModel.getItem(data.id);
-  if (!item) return;
-
-  if (cartModel.hasItem(item.id)) {
-    cartModel.removeItem(item);
-  } else {
-    cartModel.addItem(item);
-  }
-  modal.close();
 });
 
 events.on("card:removeFromBasket", (data: { id: string }) => {
@@ -125,19 +147,9 @@ events.on("card:removeFromBasket", (data: { id: string }) => {
   }
 });
 
-events.on("cart:changed", () => {
-  header.counter = cartModel.getItemCount();
-
-  const currentContent = modal["_content"].children[0];
-  if (currentContent?.classList.contains("basket")) {
-    updateBasketView();
-  }
-});
-
-function updateBasketView() {
+function updateBasketContent() {
   const items = cartModel.getItems();
-  const basket = new Basket(cloneTemplate<HTMLElement>(basketTemplate), events);
-
+  
   if (items.length === 0) {
     basket.items = [];
     basket.total = 0;
@@ -145,9 +157,15 @@ function updateBasketView() {
     const cardElements = items.map((item, index) => {
       const card = new BasketCard(
         cloneTemplate<HTMLElement>(cardBasketTemplate),
-        events,
+        {
+          onDelete: () => {
+            const product = catalogModel.getItem(item.id);
+            if (product) {
+              cartModel.removeItem(product);
+            }
+          }
+        }
       );
-      card.id = item.id;
       card.title = item.title;
       card.price = item.price;
       card.index = index + 1;
@@ -156,21 +174,22 @@ function updateBasketView() {
     basket.items = cardElements;
     basket.total = cartModel.getTotalPrice();
   }
-
-  modal.content = basket.render();
 }
 
+events.on("cart:changed", () => {
+  header.counter = cartModel.getItemCount();
+  updateBasketContent();
+  if (modal.isOpen()) {
+    modal.content = basket.render();
+  }
+});
+
 events.on("basket:open", () => {
-  updateBasketView();
+  modal.content = basket.render();
   modal.open();
 });
 
 events.on("basket:order", () => {
-  const orderForm = new OrderForm(
-    cloneTemplate<HTMLFormElement>(orderTemplate),
-    events,
-  );
-
   const buyerData = buyerModel.getData();
   orderForm.payment = buyerData.payment;
   orderForm.address = buyerData.address;
@@ -187,24 +206,11 @@ events.on("order.address:change", (data: { value: string }) => {
 });
 
 events.on("order:submit", () => {
-  const errors = buyerModel.validate();
-  const requiredFields = ["payment", "address"];
-  const hasErrors = requiredFields.some(
-    (field) => errors[field as keyof typeof errors],
-  );
+  const buyerData = buyerModel.getData();
+  contactsForm.email = buyerData.email;
+  contactsForm.phone = buyerData.phone;
 
-  if (!hasErrors) {
-    const contactsForm = new ContactsForm(
-      cloneTemplate<HTMLFormElement>(contactsTemplate),
-      events,
-    );
-
-    const buyerData = buyerModel.getData();
-    contactsForm.email = buyerData.email;
-    contactsForm.phone = buyerData.phone;
-
-    modal.content = contactsForm.render();
-  }
+  modal.content = contactsForm.render();
 });
 
 events.on("contacts.email:change", (data: { value: string }) => {
@@ -216,83 +222,51 @@ events.on("contacts.phone:change", (data: { value: string }) => {
 });
 
 events.on("buyer:changed", () => {
+  const buyerData = buyerModel.getData();
   const errors = buyerModel.validate();
-  const orderErrors = ["payment", "address"].filter(
-    (field) => errors[field as keyof typeof errors],
-  );
-  const contactsErrors = ["email", "phone"].filter(
-    (field) => errors[field as keyof typeof errors],
-  );
+  
+  orderForm.payment = buyerData.payment;
+  orderForm.address = buyerData.address;
+  
+  contactsForm.email = buyerData.email;
+  contactsForm.phone = buyerData.phone;
 
-  const currentContent = modal["_content"].children[0];
+  const orderErrors = ["payment", "address"]
+    .map(field => errors[field as keyof typeof errors])
+    .filter(error => error !== undefined);
+    
+  const contactsErrors = ["email", "phone"]
+    .map(field => errors[field as keyof typeof errors])
+    .filter(error => error !== undefined);
 
-  if (currentContent?.classList.contains("form")) {
-    const formName = (currentContent as HTMLFormElement).name;
+  orderForm.valid = orderErrors.length === 0;
+  orderForm.errors = orderErrors.join(", ");
 
-    if (formName === "order") {
-      const form = currentContent as HTMLFormElement;
-      const submitButton = form.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement;
-      if (submitButton) {
-        submitButton.disabled = orderErrors.length > 0;
-      }
-      const errorSpan = form.querySelector(".form__errors") as HTMLElement;
-      if (errorSpan) {
-        errorSpan.textContent = orderErrors
-          .map((f) => errors[f as keyof typeof errors])
-          .join(", ");
-      }
-    }
-
-    if (formName === "contacts") {
-      const form = currentContent as HTMLFormElement;
-      const submitButton = form.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement;
-      if (submitButton) {
-        submitButton.disabled = contactsErrors.length > 0;
-      }
-      const errorSpan = form.querySelector(".form__errors") as HTMLElement;
-      if (errorSpan) {
-        errorSpan.textContent = contactsErrors
-          .map((f) => errors[f as keyof typeof errors])
-          .join(", ");
-      }
-    }
-  }
+  contactsForm.valid = contactsErrors.length === 0;
+  contactsForm.errors = contactsErrors.join(", ");
 });
 
 events.on("contacts:submit", () => {
-  const errors = buyerModel.validate();
+  const order = {
+    ...buyerModel.getData(),
+    total: cartModel.getTotalPrice(),
+    items: cartModel.getItems().map((item) => item.id),
+  };
 
-  if (Object.keys(errors).length === 0) {
-    const order = {
-      ...buyerModel.getData(),
-      total: cartModel.getTotalPrice(),
-      items: cartModel.getItems().map((item) => item.id),
-    };
+  appApi
+    .postOrder(order)
+    .then((result) => {
+      if (result) {
+        cartModel.clear();
+        buyerModel.clear();
 
-    appApi
-      .postOrder(order)
-      .then((result) => {
-        if (result) {
-          cartModel.clear();
-          buyerModel.clear();
-
-          const success = new Success(
-            cloneTemplate<HTMLElement>(successTemplate),
-            events,
-          );
-          success.total = result.total;
-
-          modal.content = success.render();
-        }
-      })
-      .catch((error) => {
-        console.error("Ошибка оформления заказа:", error);
-      });
-  }
+        success.total = result.total;
+        modal.content = success.render();
+      }
+    })
+    .catch((error) => {
+      console.error("Ошибка оформления заказа:", error);
+    });
 });
 
 events.on("success:close", () => {

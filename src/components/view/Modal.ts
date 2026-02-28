@@ -9,6 +9,7 @@ interface IModal {
 export class Modal extends Component<IModal> {
   protected _closeButton: HTMLButtonElement;
   protected _content: HTMLElement;
+  private _isOpen: boolean = false; 
 
   constructor(
     container: HTMLElement,
@@ -43,5 +44,9 @@ export class Modal extends Component<IModal> {
     this.container.classList.remove("modal_active");
     this.content = null;
     this.events.emit("modal:close");
+  }
+
+  isOpen(): boolean {
+    return this._isOpen;
   }
 }

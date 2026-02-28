@@ -28,4 +28,12 @@ export class CatalogModel {
   getSelectedItem(): IProduct | null {
     return this._selectedItem;
   }
+
+  setSelectedItemById(id: string): void {
+    const item = this._items.find(item => item.id === id);
+    if (item) {
+      this._selectedItem = item;
+      this.events.emit('catalog:selected', { item: this._selectedItem });
+    }
+  }
 }
