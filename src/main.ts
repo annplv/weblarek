@@ -83,7 +83,7 @@ events.on('catalog:selected', () => {
   const buttonText = item.price === null 
     ? 'Недоступно'                    
     : isInBasket 
-      ? 'Убрать из корзины'           
+      ? 'Удалить из корзины'           
       : 'В корзину';                   
   
   const card = new PreviewCard(cloneTemplate<HTMLElement>(cardPreviewTemplate), events);
