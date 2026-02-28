@@ -1,6 +1,6 @@
-import { Form } from './Form';
-import { IEvents } from '../../base/Events';
-import { ensureElement } from '../../../utils/utils';
+import { Form } from "./Form";
+import { IEvents } from "../../base/Events";
+import { ensureElement } from "../../../utils/utils";
 
 interface IContactsForm {
   email: string;
@@ -14,8 +14,14 @@ export class ContactsForm extends Form<IContactsForm> {
   constructor(container: HTMLFormElement, events: IEvents) {
     super(container, events);
 
-    this._emailInput = ensureElement<HTMLInputElement>('input[name="email"]', this.container);
-    this._phoneInput = ensureElement<HTMLInputElement>('input[name="phone"]', this.container);
+    this._emailInput = ensureElement<HTMLInputElement>(
+      'input[name="email"]',
+      this.container,
+    );
+    this._phoneInput = ensureElement<HTMLInputElement>(
+      'input[name="phone"]',
+      this.container,
+    );
   }
 
   set email(value: string) {

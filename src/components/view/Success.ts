@@ -1,6 +1,6 @@
-import { Component } from '../base/Component';
-import { ensureElement } from '../../utils/utils';
-import { IEvents } from '../base/Events';
+import { Component } from "../base/Component";
+import { ensureElement } from "../../utils/utils";
+import { IEvents } from "../base/Events";
 
 interface ISuccess {
   total: number;
@@ -10,14 +10,23 @@ export class Success extends Component<ISuccess> {
   protected _closeButton: HTMLButtonElement;
   protected _description: HTMLElement;
 
-  constructor(container: HTMLElement, protected events: IEvents) {
+  constructor(
+    container: HTMLElement,
+    protected events: IEvents,
+  ) {
     super(container);
 
-    this._closeButton = ensureElement<HTMLButtonElement>('.order-success__close', container);
-    this._description = ensureElement<HTMLElement>('.order-success__description', container);
+    this._closeButton = ensureElement<HTMLButtonElement>(
+      ".order-success__close",
+      container,
+    );
+    this._description = ensureElement<HTMLElement>(
+      ".order-success__description",
+      container,
+    );
 
-    this._closeButton.addEventListener('click', () => {
-      events.emit('success:close');
+    this._closeButton.addEventListener("click", () => {
+      events.emit("success:close");
     });
   }
 
